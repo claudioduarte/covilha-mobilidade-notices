@@ -1,0 +1,47 @@
+name: Covilhã Mobilidade - Extract Notices
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # 06:00 UTC ≈ 07:00 in Portugal (WET)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install pymupdf requests
+
+      - name: Download and extract notices
+        env:
+          PDF_URL: ${{ secrets.PDF_URL }}
+        run: python scripts/extract_notices.py
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notices-${{ github.run_number }}
+          path: output/
+          retention-days: 90
+
+      - name: Commit if text changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add output/
+          if git diff --staged --quiet; then
+            echo "No change in notices text today"
+          else
+            git commit -m "Update notices text $(date -u +%F)"
+            git push
+          fi
