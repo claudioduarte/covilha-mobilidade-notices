@@ -1,47 +1,67 @@
-name: Covilhã Mobilidade - Extract Notices
+name: Extract Notices & Notify
 
 on:
   schedule:
-    - cron: "0 6 * * *" # 06:00 UTC ≈ 07:00 in Portugal (WET)
+    - cron: "0 8 * * *" # 08:00 UTC ≈ 09:00 in Portugal (WEST)
   workflow_dispatch:
-
-permissions:
-  contents: write
 
 jobs:
   extract:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install dependencies
         run: pip install pymupdf requests
 
-      - name: Download and extract notices
+      - name: Extract notices from PDF
+        id: extract
         env:
           PDF_URL: ${{ secrets.PDF_URL }}
-        run: python scripts/extract_notices.py
+        run: |
+          OUTPUT=$(python scripts/extract_notices.py 2>&1) || {
+            echo "$OUTPUT"
+            exit 1
+          }
+          echo "$OUTPUT"
+          if echo "$OUTPUT" | grep -q "^Extracted"; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: notices-${{ github.run_number }}
-          path: output/
-          retention-days: 90
-
-      - name: Commit if text changed
+      - name: Commit changes
+        if: steps.extract.outputs.changed == 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add output/
-          if git diff --staged --quiet; then
-            echo "No change in notices text today"
-          else
-            git commit -m "Update notices text $(date -u +%F)"
-            git push
-          fi
+          git commit -m "Update notices text $(date -u +%F)"
+          git push
+
+      - name: Create issue with new notices
+        if: steps.extract.outputs.changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const content = fs.readFileSync('output/latest.txt', 'utf8');
+            const today = new Date().toISOString().split('T')[0];
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `📢 New Service Notices - ${today}`,
+              body: `**New Covilhã Mobilidade service notices detected:**\n\n\`\`\`\n${content}\n\`\`\``,
+              assignees: ['${{ secrets.ISSUE_ASSIGNEE }}'],
+            });
