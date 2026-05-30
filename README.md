@@ -1,5 +1,7 @@
 # 🚍 Covilhã Mobilidade Notices
 
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 A Python tool to automatically extract and track notices from PDF documents. This project monitors a PDF source, extracts text content, and only generates output files when changes are detected.
 
 ## Features
@@ -15,7 +17,7 @@ A Python tool to automatically extract and track notices from PDF documents. Thi
 
 ### Requirements
 
-- Python 3.8+
+- Python 3.8 or higher
 - `requests` - For downloading PDFs
 - `PyMuPDF (fitz)` - For PDF text extraction
 
@@ -28,6 +30,11 @@ cd covilha-mobilidade-notices
 ```
 
 2. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+Or install manually:
 ```bash
 pip install requests PyMuPDF
 ```
@@ -73,7 +80,7 @@ No changes detected in PDF content
 
 ### Excluding Paragraphs
 
-You can exclude specific paragraphs by modifying the `EXCLUDE_PATTERNS` list in `extract_notices.py`:
+You can exclude specific paragraphs by modifying the `EXCLUDE_PATTERNS` list in `scripts/extract_notices.py`:
 
 ```python
 EXCLUDE_PATTERNS = [
@@ -111,10 +118,11 @@ This prevents unnecessary file churn when the PDF content hasn't changed.
 ```
 covilha-mobilidade-notices/
 ├── scripts/
-│   └── extract_notices.py    # Main extraction script
-├── output/                    # Generated output files
+│   └── extract_notices.py     # Main extraction script
+├── output/                     # Generated output files (git-ignored)
+├── requirements.txt            # Python dependencies
 ├── README.md
-└── LICENSE                    # GPLv3
+└── LICENSE                     # GPLv3
 ```
 
 ## License
@@ -133,6 +141,7 @@ The URL returned non-PDF content. Check that:
 - `PDF_URL` environment variable is correctly set
 - The URL is accessible and returns a valid PDF
 - No redirects are preventing the actual PDF download
+- The server is not blocking the request
 
 ### No output files generated
 
@@ -140,9 +149,11 @@ This could mean:
 - The PDF content matches the existing `latest.txt` (no changes detected)
 - The script is excluding all content via filters
 - Check console output for error messages
+- Verify the PDF URL is accessible
 
 ### PDF extraction is slow
 
 For large PDFs, extraction may take time. Consider:
 - Setting a higher timeout value in the `requests.get()` call
 - Running the script during off-peak hours
+- Checking your network connection
