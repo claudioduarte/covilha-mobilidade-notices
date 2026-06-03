@@ -62,6 +62,5 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               title: `📢 New Service Notices - ${today}`,
-              body: `**New Covilhã Mobilidade service notices detected:**\n\n\`\`\`\n${content}\n\`\`\``,
-              assignees: ['${{ secrets.ISSUE_ASSIGNEE }}'],
+              body: `**New Covilhã Mobilidade service notices detected:**\n\n\`\`\`\n${content}\n\`\`\``
             });
