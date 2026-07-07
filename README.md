@@ -4,6 +4,8 @@
 
 A Python tool to automatically extract and track notices from PDF documents. This project monitors a PDF source, extracts text content, and only generates output files when changes are detected.
 
+> **⚠️ Disclaimer**: This project was built entirely by GitHub Copilot.
+
 ## Features
 
 - 📥 **Automatic PDF Extraction**: Downloads and extracts text from PDF documents
