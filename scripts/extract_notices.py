@@ -101,7 +101,7 @@ for page_num, page in enumerate(doc):
 doc.close()
 
 # Join pages with separator after each page
-text = ("\n========\n".join(all_pages)) + "\n========\n"
+text = ("\n\n\n\n".join(all_pages))
 
 print(f"DEBUG: Total pages processed: {len(all_pages)}", file=sys.stderr)
 print(f"DEBUG: Final extracted text length: {len(text)} chars", file=sys.stderr)
