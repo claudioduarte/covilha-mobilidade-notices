@@ -48,10 +48,12 @@
             border-radius: 999px;
             padding: 10px 18px;
             font-weight: 600;
+            white-space: nowrap;
         }
         .meta {
             color: var(--muted);
             margin-bottom: 20px;
+            font-size: 0.95rem;
         }
         .docs {
             display: grid;
@@ -69,11 +71,7 @@
             margin: 0;
             white-space: pre-wrap;
             word-wrap: break-word;
-        }
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--muted);
+            font-size: 0.95rem;
         }
         @media (max-width: 640px) {
             .header {
@@ -86,11 +84,28 @@
     <main class="container">
         <div class="header">
             <h1>🚍 Covilhã Mobilidade Notices</h1>
-            <a class="archive-link" href="./archive.html">Archive</a>
+            <a class="archive-link" href="./archive.html">📚 Archive</a>
         </div>
-        <div class="meta">Loading...</div>
+        <div class="meta">Last updated: 2026-10-06</div>
         <section class="docs">
-            <div class="loading">Waiting for first extraction...</div>
+            <article class="notice">
+                <p>ALTERAÇÃO DE SERVIÇOS
+«Latada 2026»
+
+Estimado(a) cliente, devido ao evento LATADA 2026, no dia 7
+de Outubro de 2026 pedimos que leve em conta os seguintes
+avisos  de condicionamentos de trânsito:
+• Das 12h00 às 20h00: Rua Marquês de Ávila e Bolama
+encerrada, com impacto em todas as linhas urbanas, à exceção
+da linha 27.
+• Após as 20h00: alterações de percurso nas linhas N1, UNI e
+N2.
+• Podem ocorrer outros condicionamentos noutras zonas da
+cidade.
+Recomenda-se, assim, que se utilize a Garagem de São João como
+principal ponto de embarque da cidade.
+Agradecemos a vossa compreensão.</p>
+            </article>
         </section>
     </main>
 </body>
