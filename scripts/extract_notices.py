@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import html
 import os
 import sys
 from datetime import datetime, timezone
@@ -17,8 +18,11 @@ if not PDF_URL:
 
 print(f"DEBUG: PDF_URL = {PDF_URL}", file=sys.stderr)
 
-OUT_DIR = Path("output")
+ROOT_DIR = Path(__file__).resolve().parents[1]
+OUT_DIR = ROOT_DIR / "output"
+DOCS_DIR = ROOT_DIR / "docs"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
+DOCS_DIR.mkdir(parents=True, exist_ok=True)
 
 today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 txt_dated = OUT_DIR / f"notices-{today}.txt"
@@ -40,6 +44,7 @@ EXCLUDE_LINES = [
     "www.covilhamobilidade.pt",
 ]
 
+
 def should_exclude_line(line):
     """Check if a line should be excluded"""
     line_stripped = line.strip()
@@ -47,6 +52,199 @@ def should_exclude_line(line):
         if line_stripped.lower() == pattern.lower():
             return True
     return False
+
+
+def render_notice_card(text):
+    """Render a notice paragraph as HTML."""
+    paragraphs = [p.strip() for p in re.split(r"\n\s*\n+", text.strip()) if p.strip()]
+    if not paragraphs:
+        paragraphs = ["No notices available."]
+
+    cards = []
+    for paragraph in paragraphs:
+        safe_paragraph = html.escape(paragraph).replace("\n", "<br>")
+        cards.append(f"<article class=\"notice\"><p>{safe_paragraph}</p></article>")
+    return "\n".join(cards)
+
+
+def build_page(title, body_html, updated_at):
+    """Create a static HTML page for GitHub Pages."""
+    return f"""<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <title>{html.escape(title)}</title>
+    <style>
+        :root {{
+            --bg: #f5f7fb;
+            --card: #ffffff;
+            --ink: #1f2937;
+            --muted: #6b7280;
+            --accent: #2563eb;
+            --accent-soft: #dbeafe;
+            --border: #dfe3ea;
+        }}
+        * {{ box-sizing: border-box; }}
+        body {{
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: var(--bg);
+            color: var(--ink);
+            line-height: 1.6;
+        }}
+        .container {{
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }}
+        .header {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }}
+        h1 {{
+            margin: 0;
+            font-size: clamp(2rem, 3vw, 2.75rem);
+        }}
+        .archive-link {{
+            display: inline-block;
+            text-decoration: none;
+            background: var(--accent-soft);
+            color: var(--accent);
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            padding: 10px 18px;
+            font-weight: 600;
+        }}
+        .meta {{
+            color: var(--muted);
+            margin-bottom: 20px;
+        }}
+        .docs {{
+            display: grid;
+            gap: 18px;
+        }}
+        .notice {{
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-left: 6px solid var(--accent);
+            border-radius: 12px;
+            padding: 18px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+        }}
+        .notice p {{
+            margin: 0;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }}
+        .archive-list {{
+            display: grid;
+            gap: 12px;
+            margin-top: 18px;
+        }}
+        .archive-item {{
+            display: block;
+            padding: 12px 14px;
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            text-decoration: none;
+            color: var(--ink);
+            font-weight: 600;
+        }}
+        @media (max-width: 640px) {{
+            .header {{
+                align-items: flex-start;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <main class=\"container\">
+        <div class=\"header\">
+            <h1>{html.escape(title)}</h1>
+            <a class=\"archive-link\" href=\"./archive.html\">Archive</a>
+        </div>
+        <div class=\"meta\">Updated: {html.escape(updated_at)}</div>
+        <section class=\"docs\">
+            {body_html}
+        </section>
+    </main>
+</body>
+</html>
+"""
+
+
+def generate_pages(text, notice_date):
+    """Generate static pages for GitHub Pages."""
+    body_html = render_notice_card(text)
+    updated_at = notice_date
+
+    index_html = build_page("Covilhã Mobilidade Notices", body_html, updated_at)
+    (DOCS_DIR / "index.html").write_text(index_html, encoding="utf-8")
+
+    dated_page = build_page(f"Covilhã Mobilidade Notices — {notice_date}", body_html, updated_at)
+    (DOCS_DIR / f"notices-{notice_date}.html").write_text(dated_page, encoding="utf-8")
+
+    archive_items = []
+    for archive_file in sorted(DOCS_DIR.glob("notices-*.html")):
+        if archive_file.name == "index.html":
+            continue
+        archive_name = archive_file.name.replace("notices-", "").replace(".html", "")
+        archive_items.append(
+            f'<a class="archive-item" href="./{archive_file.name}">{archive_name}</a>'
+        )
+
+    archive_html = f"""<!DOCTYPE html>
+<html lang=\"en\">
+<head>
+    <meta charset=\"UTF-8\" />
+    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <title>Covilhã Mobilidade Notices Archive</title>
+    <style>
+        body {{
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fb;
+            color: #1f2937;
+            line-height: 1.6;
+        }}
+        .container {{
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 32px 20px 48px;
+        }}
+        h1 {{ margin-bottom: 20px; }}
+        .archive-list {{ display: grid; gap: 12px; }}
+        .archive-item {{
+            display: block;
+            padding: 12px 14px;
+            background: #ffffff;
+            border: 1px solid #dfe3ea;
+            border-radius: 10px;
+            text-decoration: none;
+            color: #1f2937;
+            font-weight: 600;
+        }}
+    </style>
+</head>
+<body>
+    <main class=\"container\">
+        <h1>Archive</h1>
+        <div class=\"archive-list\">
+            <a class=\"archive-item\" href=\"./index.html\">Latest</a>
+            {''.join(archive_items)}
+        </div>
+    </main>
+</body>
+</html>
+"""
+    (DOCS_DIR / "archive.html").write_text(archive_html, encoding="utf-8")
+
 
 print("DEBUG: Downloading PDF...", file=sys.stderr)
 response = requests.get(PDF_URL, headers=headers, timeout=60)
@@ -68,40 +266,33 @@ for page_num, page in enumerate(doc):
     page_text = page.get_text().strip()
     if page_text:
         print(f"DEBUG: Page {page_num + 1} has {len(page_text)} chars", file=sys.stderr)
-        # Process line by line, preserving paragraph breaks
         filtered_content = []
         current_paragraph = []
-        
+
         for line in page_text.split("\n"):
             line = line.rstrip()
-            
+
             if not line.strip():
-                # Empty line - end current paragraph
                 if current_paragraph:
                     filtered_content.append("\n".join(current_paragraph))
                     current_paragraph = []
             elif not should_exclude_line(line):
-                # Non-empty, non-excluded line
                 current_paragraph.append(line)
             else:
-                # Excluded line
                 print(f"DEBUG: Excluding line: {line[:60]}", file=sys.stderr)
-                # End current paragraph if we hit an excluded line
                 if current_paragraph:
                     filtered_content.append("\n".join(current_paragraph))
                     current_paragraph = []
-        
-        # Don't forget the last paragraph
+
         if current_paragraph:
             filtered_content.append("\n".join(current_paragraph))
-        
+
         if filtered_content:
             all_pages.append("\n\n".join(filtered_content))
 
 doc.close()
 
-# Join pages with separator after each page
-text = ("\n\n\n\n".join(all_pages))
+text = "\n\n\n\n".join(all_pages)
 
 print(f"DEBUG: Total pages processed: {len(all_pages)}", file=sys.stderr)
 print(f"DEBUG: Final extracted text length: {len(text)} chars", file=sys.stderr)
@@ -117,6 +308,13 @@ if txt_latest.exists():
 if has_changed:
     txt_dated.write_text(text, encoding="utf-8")
     txt_latest.write_text(text, encoding="utf-8")
+    generate_pages(text, today)
     print(f"Extracted {len(text)} chars → {txt_dated} and {txt_latest}")
+    print(f"Generated GitHub Pages content in {DOCS_DIR}")
 else:
     print("No changes detected in PDF content")
+    if txt_latest.exists():
+        latest_text = txt_latest.read_text(encoding="utf-8")
+        if latest_text:
+            generate_pages(latest_text, today)
+            print(f"Refreshed GitHub Pages content in {DOCS_DIR}")
