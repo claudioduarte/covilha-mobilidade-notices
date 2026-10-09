@@ -73,6 +73,8 @@ def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
     <link rel="stylesheet" href="./css/style-archive-notices.css" />
+    <link rel="icon" href="./images/favicon_io/favicon.ico" />
+    <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
 <body>
     <main class="container">
@@ -108,6 +110,8 @@ def build_archive_page() -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arquivo de Avisos | Covilhã Mobilidade</title>
     <link rel="stylesheet" href="./css/style-archive.css" />
+    <link rel="icon" href="./images/favicon_io/favicon.ico" />
+    <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
 <body>
     <main class="container">
