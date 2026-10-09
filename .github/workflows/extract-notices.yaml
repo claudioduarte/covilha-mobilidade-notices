@@ -49,18 +49,20 @@ jobs:
           git commit -m "Update notices text $(date -u +%F)"
           git push
 
-      - name: Create issue with new notices
+      - name: Send GitHub Actions notification
         if: steps.extract.outputs.changed == 'true'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const content = fs.readFileSync('output/latest.txt', 'utf8');
-            const today = new Date().toISOString().split('T')[0];
+            const preview = content.slice(0, 600).trim();
+
+            core.notice(`New notice detected:\n\n${preview}`);
 
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `📢 New Service Notices - ${today}`,
-              body: `**New Covilhã Mobilidade service notices detected:**\n\n\`\`\`\n${content}\n\`\`\``
+              title: `📣 Service notice update`,
+              body: `A new Covilhã Mobilidade notice was detected.\n\n\`\`\`\n${content}\n\`\`\``
             });
