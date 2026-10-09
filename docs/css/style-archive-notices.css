@@ -1,13 +1,13 @@
 @import url("https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&display=swap");
 
 :root {
-  --bg: #f5f7fb;
+  --bg: #fff5f5;
   --card: #fff;
   --ink: #1f2937;
   --muted: #6b7280;
-  --accent: #2563eb;
-  --accent-soft: #dbeafe;
-  --border: #dfe3ea;
+  --accent: #e40613;
+  --accent-soft: #ffe3e5;
+  --border: #f7c7cc;
 }
 
 * {
