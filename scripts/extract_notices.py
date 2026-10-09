@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 import html
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
-import re
 
 import fitz
 import requests
 
 PDF_URL = os.environ.get("PDF_URL")
 
-# Debug: Check if PDF_URL is set
 if not PDF_URL:
     print("ERROR: PDF_URL environment variable is not set", file=sys.stderr)
     sys.exit(1)
-
-print(f"DEBUG: PDF_URL = {PDF_URL}", file=sys.stderr)
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
 OUT_DIR = ROOT_DIR / "output"
@@ -34,7 +31,6 @@ headers = {
     "User-Agent": "covilha-aviso-extractor/1.0",
 }
 
-# Define lines/patterns to exclude
 EXCLUDE_LINES = [
     "Estimado(a) cliente,",
     "Lamentamos o incómodo causado. Agradecemos a compreensão.",
@@ -42,11 +38,12 @@ EXCLUDE_LINES = [
     "+351 225 100 100",
     "(chamada para a rede fixa nacional)",
     "www.covilhamobilidade.pt",
+    "Agradecemos a sua compreensão e desejamos-lhe umas Boas Férias!",
+    "Agradecemos a compreensão e lamentamos os incómodos causados.",
 ]
 
 
-def should_exclude_line(line):
-    """Check if a line should be excluded"""
+def should_exclude_line(line: str) -> bool:
     line_stripped = line.strip()
     for pattern in EXCLUDE_LINES:
         if line_stripped.lower() == pattern.lower():
@@ -54,9 +51,12 @@ def should_exclude_line(line):
     return False
 
 
-def render_notice_card(text):
-    """Render a notice paragraph as HTML."""
-    paragraphs = [p.strip() for p in re.split(r"\n\s*\n+", text.strip()) if p.strip()]
+def split_paragraphs(text: str):
+    return [p.strip() for p in re.split(r"\n\s*\n+", text.strip()) if p.strip()]
+
+
+def render_notice_card(text: str) -> str:
+    paragraphs = split_paragraphs(text)
     if not paragraphs:
         paragraphs = ["No notices available."]
 
@@ -67,13 +67,12 @@ def render_notice_card(text):
     return "\n".join(cards)
 
 
-def build_page(title, body_html, updated_at):
-    """Create a static HTML page for GitHub Pages."""
+def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "./archive.html") -> str:
     return f"""<!DOCTYPE html>
-<html lang=\"en\">
+<html lang="en">
 <head>
-    <meta charset=\"UTF-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
     <style>
         :root {{
@@ -164,13 +163,13 @@ def build_page(title, body_html, updated_at):
     </style>
 </head>
 <body>
-    <main class=\"container\">
-        <div class=\"header\">
+    <main class="container">
+        <div class="header">
             <h1>{html.escape(title)}</h1>
-            <a class=\"archive-link\" href=\"./archive.html\">Archive</a>
+            <a class="archive-link" href="{archive_url}">Archive</a>
         </div>
-        <div class=\"meta\">Updated: {html.escape(updated_at)}</div>
-        <section class=\"docs\">
+        <div class="meta">Updated: {html.escape(updated_at)}</div>
+        <section class="docs">
             {body_html}
         </section>
     </main>
@@ -179,31 +178,22 @@ def build_page(title, body_html, updated_at):
 """
 
 
-def generate_pages(text, notice_date):
-    """Generate static pages for GitHub Pages."""
-    body_html = render_notice_card(text)
-    updated_at = notice_date
-
-    index_html = build_page("Covilhã Mobilidade Notices", body_html, updated_at)
-    (DOCS_DIR / "index.html").write_text(index_html, encoding="utf-8")
-
-    dated_page = build_page(f"Covilhã Mobilidade Notices — {notice_date}", body_html, updated_at)
-    (DOCS_DIR / f"notices-{notice_date}.html").write_text(dated_page, encoding="utf-8")
-
+def build_archive_page() -> str:
+    archive_files = sorted(DOCS_DIR.glob("notices-*.html"))
     archive_items = []
-    for archive_file in sorted(DOCS_DIR.glob("notices-*.html")):
-        if archive_file.name == "index.html":
-            continue
-        archive_name = archive_file.name.replace("notices-", "").replace(".html", "")
-        archive_items.append(
-            f'<a class="archive-item" href="./{archive_file.name}">{archive_name}</a>'
-        )
 
-    archive_html = f"""<!DOCTYPE html>
-<html lang=\"en\">
+    for archive_file in archive_files:
+        name = archive_file.name
+        if name == "index.html":
+            continue
+        label = name.replace("notices-", "").replace(".html", "")
+        archive_items.append(f'<a class="archive-item" href="./{name}">{label}</a>')
+
+    return f"""<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset=\"UTF-8\" />
-    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Covilhã Mobilidade Notices Archive</title>
     <style>
         body {{
@@ -233,16 +223,33 @@ def generate_pages(text, notice_date):
     </style>
 </head>
 <body>
-    <main class=\"container\">
+    <main class="container">
         <h1>Archive</h1>
-        <div class=\"archive-list\">
-            <a class=\"archive-item\" href=\"./index.html\">Latest</a>
+        <div class="archive-list">
+            <a class="archive-item" href="./index.html">Latest</a>
             {''.join(archive_items)}
         </div>
     </main>
 </body>
 </html>
 """
+
+
+def generate_pages(text: str, notice_date: str):
+    body_html = render_notice_card(text)
+
+    index_html = build_page("Covilhã Mobilidade Notices", body_html, notice_date)
+    (DOCS_DIR / "index.html").write_text(index_html, encoding="utf-8")
+
+    dated_page = build_page(
+        f"Covilhã Mobilidade Notices — {notice_date}",
+        body_html,
+        notice_date,
+        archive_url="./archive.html",
+    )
+    (DOCS_DIR / f"notices-{notice_date}.html").write_text(dated_page, encoding="utf-8")
+
+    archive_html = build_archive_page()
     (DOCS_DIR / "archive.html").write_text(archive_html, encoding="utf-8")
 
 
@@ -250,7 +257,6 @@ print("DEBUG: Downloading PDF...", file=sys.stderr)
 response = requests.get(PDF_URL, headers=headers, timeout=60)
 response.raise_for_status()
 print(f"DEBUG: Response status code: {response.status_code}", file=sys.stderr)
-print(f"DEBUG: Response content length: {len(response.content)} bytes", file=sys.stderr)
 
 if not response.content.startswith(b"%PDF"):
     print("ERROR: Response is not a PDF", file=sys.stderr)
@@ -260,18 +266,14 @@ print("DEBUG: Extracting text from PDF...", file=sys.stderr)
 doc = fitz.open(stream=response.content, filetype="pdf")
 print(f"DEBUG: PDF has {len(doc)} pages", file=sys.stderr)
 
-# Extract text line by line and filter
 all_pages = []
 for page_num, page in enumerate(doc):
     page_text = page.get_text().strip()
     if page_text:
-        print(f"DEBUG: Page {page_num + 1} has {len(page_text)} chars", file=sys.stderr)
         filtered_content = []
         current_paragraph = []
-
         for line in page_text.split("\n"):
             line = line.rstrip()
-
             if not line.strip():
                 if current_paragraph:
                     filtered_content.append("\n".join(current_paragraph))
@@ -279,14 +281,11 @@ for page_num, page in enumerate(doc):
             elif not should_exclude_line(line):
                 current_paragraph.append(line)
             else:
-                print(f"DEBUG: Excluding line: {line[:60]}", file=sys.stderr)
                 if current_paragraph:
                     filtered_content.append("\n".join(current_paragraph))
                     current_paragraph = []
-
         if current_paragraph:
             filtered_content.append("\n".join(current_paragraph))
-
         if filtered_content:
             all_pages.append("\n\n".join(filtered_content))
 
@@ -297,14 +296,12 @@ text = "\n\n\n\n".join(all_pages)
 print(f"DEBUG: Total pages processed: {len(all_pages)}", file=sys.stderr)
 print(f"DEBUG: Final extracted text length: {len(text)} chars", file=sys.stderr)
 
-# Check if content has changed
 has_changed = True
 if txt_latest.exists():
     existing_text = txt_latest.read_text(encoding="utf-8")
     has_changed = existing_text != text
     print(f"DEBUG: Previous file exists. Content changed: {has_changed}", file=sys.stderr)
 
-# Only write files if content has changed
 if has_changed:
     txt_dated.write_text(text, encoding="utf-8")
     txt_latest.write_text(text, encoding="utf-8")
