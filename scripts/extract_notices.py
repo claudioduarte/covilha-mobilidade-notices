@@ -72,101 +72,15 @@ def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
-    <style>
-        :root {{
-            --bg: #f5f7fb;
-            --card: #ffffff;
-            --ink: #1f2937;
-            --muted: #6b7280;
-            --accent: #2563eb;
-            --accent-soft: #dbeafe;
-            --border: #dfe3ea;
-        }}
-        * {{ box-sizing: border-box; }}
-        body {{
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: var(--bg);
-            color: var(--ink);
-            line-height: 1.6;
-        }}
-        .container {{
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 32px 20px 48px;
-        }}
-        .header {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
-            flex-wrap: wrap;
-            margin-bottom: 24px;
-        }}
-        h1 {{
-            margin: 0;
-            font-size: clamp(2rem, 3vw, 2.75rem);
-        }}
-        .archive-link {{
-            display: inline-block;
-            text-decoration: none;
-            background: var(--accent-soft);
-            color: var(--accent);
-            border: 1px solid var(--border);
-            border-radius: 999px;
-            padding: 10px 18px;
-            font-weight: 600;
-        }}
-        .meta {{
-            color: var(--muted);
-            margin-bottom: 20px;
-        }}
-        .docs {{
-            display: grid;
-            gap: 18px;
-        }}
-        .notice {{
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-left: 6px solid var(--accent);
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
-        }}
-        .notice p {{
-            margin: 0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-        }}
-        .archive-list {{
-            display: grid;
-            gap: 12px;
-            margin-top: 18px;
-        }}
-        .archive-item {{
-            display: block;
-            padding: 12px 14px;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            text-decoration: none;
-            color: var(--ink);
-            font-weight: 600;
-        }}
-        @media (max-width: 640px) {{
-            .header {{
-                align-items: flex-start;
-            }}
-        }}
-    </style>
+    <link rel="stylesheet" href="./css/style-archive-notices.css" />
 </head>
 <body>
     <main class="container">
         <div class="header">
             <h1>{html.escape(title)}</h1>
-            <a class="archive-link" href="{archive_url}">Archive</a>
+            <a class="archive-link" href="{archive_url}">Arquivo</a>
         </div>
-        <div class="meta">Updated: {html.escape(updated_at)}</div>
+        <div class="meta">Última atualização: {html.escape(updated_at)}</div>
         <section class="docs">
             {body_html}
         </section>
@@ -192,39 +106,14 @@ def build_archive_page() -> str:
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Covilhã Mobilidade Notices Archive</title>
-    <style>
-        body {{
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            background: #f5f7fb;
-            color: #1f2937;
-            line-height: 1.6;
-        }}
-        .container {{
-            max-width: 900px;
-            margin: 0 auto;
-            padding: 32px 20px 48px;
-        }}
-        h1 {{ margin-bottom: 20px; }}
-        .archive-list {{ display: grid; gap: 12px; }}
-        .archive-item {{
-            display: block;
-            padding: 12px 14px;
-            background: #ffffff;
-            border: 1px solid #dfe3ea;
-            border-radius: 10px;
-            text-decoration: none;
-            color: #1f2937;
-            font-weight: 600;
-        }}
-    </style>
+    <title>Arquivo de Avisos | Covilhã Mobilidade</title>
+    <link rel="stylesheet" href="./css/style-archive.css" />
 </head>
 <body>
     <main class="container">
-        <h1>Archive</h1>
+        <h1>Arquivo</h1>
         <div class="archive-list">
-            <a class="archive-item" href="./index.html">Latest</a>
+            <a class="archive-item" href="./index.html">⬅️ Últimas</a>
             {''.join(archive_items)}
         </div>
     </main>
@@ -236,11 +125,11 @@ def build_archive_page() -> str:
 def generate_pages(text: str, notice_date: str):
     body_html = render_notice_card(text)
 
-    index_html = build_page("Covilhã Mobilidade Notices", body_html, notice_date)
+    index_html = build_page("Avisos | Covilhã Mobilidade", body_html, notice_date)
     (DOCS_DIR / "index.html").write_text(index_html, encoding="utf-8")
 
     dated_page = build_page(
-        f"Covilhã Mobilidade Notices — {notice_date}",
+        f"Aviso | Covilhã Mobilidade — {notice_date}",
         body_html,
         notice_date,
         archive_url="./archive.html",
