@@ -38,8 +38,6 @@ EXCLUDE_LINES = [
     "+351 225 100 100",
     "(chamada para a rede fixa nacional)",
     "www.covilhamobilidade.pt",
-    "Agradecemos a sua compreensão e desejamos-lhe umas Boas Férias!",
-    "Agradecemos a compreensão e lamentamos os incómodos causados.",
 ]
 
 
