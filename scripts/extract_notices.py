@@ -87,6 +87,9 @@ def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "
             {body_html}
         </section>
     </main>
+    <footer>
+        Dados extraídos de <a href="https://covilhamobilidade.pt/">https://covilhamobilidade.pt/</a>
+    </footer>
 </body>
 </html>
 """
@@ -121,6 +124,9 @@ def build_archive_page() -> str:
             {''.join(archive_items)}
         </div>
     </main>
+    <footer>
+        Dados extraídos de <a href="https://covilhamobilidade.pt/">https://covilhamobilidade.pt/</a>
+    </footer>
 </body>
 </html>
 """
