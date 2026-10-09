@@ -125,7 +125,9 @@ def build_archive_page() -> str:
         </div>
     </main>
     <footer>
-        Dados extraídos de <a href="https://covilhamobilidade.pt/">https://covilhamobilidade.pt/</a>
+        <section class="footer-content">
+            Dados extraídos de <a href="https://covilhamobilidade.pt/">Covilhã Mobilidade</a>. Um projeto de <a href="https://claudioduarte.pt/">Cláudio Duarte</a>.
+        </section>
     </footer>
 </body>
 </html>
