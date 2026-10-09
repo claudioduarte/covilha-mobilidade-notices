@@ -1,161 +1,130 @@
 # 🚍 Covilhã Mobilidade Notices
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/)
 
-A Python tool to automatically extract and track notices from PDF documents. This project monitors a PDF source, extracts text content, and only generates output files when changes are detected.
+A Python tool that automatically monitors a PDF source for Covilhã Mobilidade service notices, extracts the relevant text, and publishes the latest result on a GitHub Pages site.
 
-> **⚠️ Disclaimer**: This project was built entirely by GitHub Copilot.
+This project checks the source PDF on a schedule, ignores unchanged content, and only generates new output when there is a real notice update.
+
+> Disclaimer: This project was built with the help of GitHub Copilot.
 
 ## Features
 
-- 📥 **Automatic PDF Extraction**: Downloads and extracts text from PDF documents
-- 🔍 **Change Detection**: Only generates output when PDF content actually changes
-- 📅 **Timestamped Exports**: Saves dated and latest versions of extracted text
-- ⏭️ **Selective Extraction**: Exclude specific paragraphs or patterns from extraction
-- 🔄 **No-Cache Headers**: Ensures fresh PDF content with proper cache control
-- ⚠️ **Error Handling**: Validates PDF format and handles network errors
+- 📥 Download and parse the source PDF automatically
+- 🔎 Extract only the relevant notice text from the document
+- 🧹 Clean repeated boilerplate and noisy content before saving
+- 📅 Save dated outputs in `output/` whenever content changes
+- 🧾 Publish the latest notice and an archive of previous entries in `docs/`
+- 🌐 Generate a static GitHub Pages site from the generated HTML files
+- ⚙️ Run automatically with GitHub Actions on a schedule or on demand
+
+## Repository structure
+
+```text
+.
+├── .github/
+│   └── workflows/
+│       ├── extract-notices.yaml
+│       └── python.yaml
+├── docs/
+│   ├── index.html
+│   ├── archive.html
+│   └── notices-YYYY-MM-DD.html
+├── output/
+│   ├── latest.txt
+│   └── notices-YYYY-MM-DD.txt
+├── scripts/
+│   └── extract_notices.py
+├── .gitignore
+├── LICENSE
+├── README.md
+├── requirements.txt
+└── ...
+```
+
+## How it works
+
+The script in `scripts/extract_notices.py` performs the following steps:
+
+1. Downloads the source PDF from the configured `PDF_URL`
+2. Extracts text from the document using PyMuPDF
+3. Removes repeated or irrelevant content from the PDF output
+4. Saves the cleaned notice text to `output/latest.txt`
+5. Writes dated files in the `output/` folder when the content changes
+6. Generates static HTML pages in `docs/` for GitHub Pages
 
 ## Installation
 
 ### Requirements
 
-- Python 3.8 or higher
-- `requests` - For downloading PDFs
-- `PyMuPDF (fitz)` - For PDF text extraction
+- Python 3.12+
+- `requests`
+- `PyMuPDF`
 
 ### Setup
 
-1. Clone the repository:
+Clone the repository and install dependencies:
+
 ```bash
 git clone https://github.com/claudioduarte/covilha-mobilidade-notices.git
 cd covilha-mobilidade-notices
-```
-
-2. Install dependencies:
-```bash
 pip install -r requirements.txt
 ```
 
-Or install manually:
+Alternatively, install manually:
+
 ```bash
 pip install requests PyMuPDF
 ```
 
 ## Configuration
 
-### Environment Variables
-
-- `PDF_URL` (required): The URL of the PDF document to extract
+Set the PDF URL as a repository secret named `PDF_URL`.
 
 Example:
+
 ```bash
-export PDF_URL="https://example.com/notices.pdf"
+export PDF_URL="https://example.com/notice.pdf"
 ```
 
-## Usage
+Then run:
 
-### Basic Usage
-
-Run the extraction script:
 ```bash
 python scripts/extract_notices.py
 ```
 
-### Output
+## GitHub Actions workflow
 
-The script generates two files in the `output/` directory:
+The repo includes a workflow in `.github/workflows/extract-notices.yaml`.
 
-- `notices-YYYY-MM-DD.txt` - Timestamped file with today's extraction
-- `latest.txt` - Always contains the most recent extraction
+That workflow:
 
-**Example output:**
-```
-Extracted 2450 chars → output/notices-2026-05-29.txt and output/latest.txt
-```
+- checks out the repository
+- installs the Python dependencies
+- runs the extraction script
+- checks whether the notice content changed
+- commits updated files when a new notice is detected
+- publishes the latest HTML output and archive pages via GitHub Pages
 
-If no changes are detected:
-```
-No changes detected in PDF content
-```
+## GitHub Pages
 
-## Filtering & Customization
+The generated site is published from the repository's `docs/` folder.
 
-### Excluding Paragraphs
+It includes:
 
-You can exclude specific paragraphs by modifying the `EXCLUDE_PATTERNS` list in `scripts/extract_notices.py`:
+- a landing page with the latest notice
+- an archive page with historical notices
+- individual pages for each dated notice snapshot
 
-```python
-EXCLUDE_PATTERNS = [
-    "Advertisement",
-    "Disclaimer",
-    "Copyright",
-]
-```
+## Output examples
 
-### Regex-Based Filtering
+The text output is stored in files like:
 
-For more advanced filtering, use regex patterns:
+- `output/latest.txt`
+- `output/notices-2026-10-06.txt`
 
-```python
-import re
-
-EXCLUDE_PATTERNS = [
-    r"^\d{4}-\d{2}-\d{2}",  # Exclude date lines
-    r"^(Page|Página) \d+",   # Exclude page numbers
-]
-```
-
-## Change Detection Logic
-
-The script compares the newly extracted text with the existing `latest.txt` file:
-
-- **First run**: No previous `latest.txt` exists → files are created
-- **Changes detected**: New content differs from existing file → files are updated
-- **No changes**: Content is identical → no files are written
-
-This prevents unnecessary file churn when the PDF content hasn't changed.
-
-## Project Structure
-
-```
-covilha-mobilidade-notices/
-├── scripts/
-│   └── extract_notices.py     # Main extraction script
-├── output/                     # Generated output files (git-ignored)
-├── requirements.txt            # Python dependencies
-├── README.md
-└── LICENSE                     # GPLv3
-```
+These files are used as the source for the HTML pages in `docs/`.
 
 ## License
 
-This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
-
-## Contributing
-
-Contributions are welcome! Feel free to open issues or submit pull requests.
-
-## Troubleshooting
-
-### "Response is not a PDF"
-
-The URL returned non-PDF content. Check that:
-- `PDF_URL` environment variable is correctly set
-- The URL is accessible and returns a valid PDF
-- No redirects are preventing the actual PDF download
-- The server is not blocking the request
-
-### No output files generated
-
-This could mean:
-- The PDF content matches the existing `latest.txt` (no changes detected)
-- The script is excluding all content via filters
-- Check console output for error messages
-- Verify the PDF URL is accessible
-
-### PDF extraction is slow
-
-For large PDFs, extraction may take time. Consider:
-- Setting a higher timeout value in the `requests.get()` call
-- Running the script during off-peak hours
-- Checking your network connection
+This project is licensed under the MIT License. See `LICENSE` for details.
