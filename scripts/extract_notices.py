@@ -53,6 +53,41 @@ def split_paragraphs(text: str):
     return [p.strip() for p in re.split(r"\n\s*\n+", text.strip()) if p.strip()]
 
 
+def normalize_pdf_text(raw_text: str) -> str:
+    """
+    Convert raw PDF line-wrapped text into readable paragraphs.
+    """
+    if not raw_text:
+        return ""
+
+    text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
+    text = re.sub(r"(\w)-\n\s*", r"\1", text)
+    text = re.sub(r"(\w)-\s+(?=\w)", r"\1", text)
+
+    lines = []
+    for line in text.split("\n"):
+        clean = line.strip()
+        if not clean:
+            continue
+        if should_exclude_line(clean):
+            continue
+        lines.append(clean)
+
+    paragraphs = []
+    current = []
+
+    for line in lines:
+        if current and current[-1].endswith((".", "!", "?", ";", ":")):
+            paragraphs.append(" ".join(current))
+            current = []
+        current.append(line)
+
+    if current:
+        paragraphs.append(" ".join(current))
+
+    return "\n\n".join(paragraphs)
+
+
 def render_notice_card(text: str) -> str:
     paragraphs = split_paragraphs(text)
     if not paragraphs:
@@ -169,24 +204,9 @@ all_pages = []
 for page_num, page in enumerate(doc):
     page_text = page.get_text().strip()
     if page_text:
-        filtered_content = []
-        current_paragraph = []
-        for line in page_text.split("\n"):
-            line = line.rstrip()
-            if not line.strip():
-                if current_paragraph:
-                    filtered_content.append("\n".join(current_paragraph))
-                    current_paragraph = []
-            elif not should_exclude_line(line):
-                current_paragraph.append(line)
-            else:
-                if current_paragraph:
-                    filtered_content.append("\n".join(current_paragraph))
-                    current_paragraph = []
-        if current_paragraph:
-            filtered_content.append("\n".join(current_paragraph))
-        if filtered_content:
-            all_pages.append("\n\n".join(filtered_content))
+        normalized = normalize_pdf_text(page_text)
+        if normalized:
+            all_pages.append(normalized)
 
 doc.close()
 
