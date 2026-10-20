@@ -83,7 +83,7 @@ h1 {
 
 .notice p {
   margin: 0;
-  white-space: pre-line;
+  white-space: normal;
   word-wrap: break-word;
   font-size: 0.95rem;
 }
