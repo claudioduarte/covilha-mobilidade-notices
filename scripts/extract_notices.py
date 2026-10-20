@@ -56,36 +56,59 @@ def split_paragraphs(text: str):
 def normalize_pdf_text(raw_text: str) -> str:
     """
     Convert raw PDF line-wrapped text into readable paragraphs.
+    This merges broken lines, strips standard boilerplate, and keeps
+    notice text readable for humans.
     """
     if not raw_text:
         return ""
 
     text = raw_text.replace("\r\n", "\n").replace("\r", "\n")
-    text = re.sub(r"(\w)-\n\s*", r"\1", text)
-    text = re.sub(r"(\w)-\s+(?=\w)", r"\1", text)
 
-    lines = []
+    # Fix text broken by PDF page wrapping and hyphenation.
+    text = re.sub(r"(?<=\w)-\s*\n\s*", "", text)
+    text = re.sub(r"(?<=\w)-\s+(?=\w)", "", text)
+    text = re.sub(r"\t+", " ", text)
+
+    clean_lines = []
     for line in text.split("\n"):
-        clean = line.strip()
+        clean = re.sub(r"\s+", " ", line.strip())
         if not clean:
             continue
         if should_exclude_line(clean):
             continue
-        lines.append(clean)
+        clean_lines.append(clean)
 
-    paragraphs = []
-    current = []
+    if not clean_lines:
+        return ""
 
-    for line in lines:
-        if current and current[-1].endswith((".", "!", "?", ";", ":")):
-            paragraphs.append(" ".join(current))
-            current = []
-        current.append(line)
+    merged = []
+    buffer = ""
 
-    if current:
-        paragraphs.append(" ".join(current))
+    for line in clean_lines:
+        is_bullet = line.startswith(("•", "-", "*"))
+        starts_new_block = re.match(r"^[A-ZÁÉÍÓÚÀÂÊÔÜÃÕÇ0-9«\"]", line) is not None
 
-    return "\n\n".join(paragraphs)
+        if not buffer:
+            buffer = line
+            continue
+
+        if is_bullet:
+            merged.append(buffer)
+            buffer = line
+            continue
+
+        if buffer.endswith((".", "!", "?", ":", ";", "…")) or starts_new_block:
+            merged.append(buffer)
+            buffer = line
+            continue
+
+        buffer = f"{buffer} {line}"
+
+    if buffer:
+        merged.append(buffer)
+
+    # Keep real blank-line separation while removing noise from wrapped lines.
+    return "\n\n".join(part.strip() for part in merged if part.strip())
 
 
 def render_notice_card(text: str) -> str:
