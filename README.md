@@ -103,7 +103,7 @@ That workflow:
 - installs the Python dependencies
 - runs the extraction script
 - checks whether the notice content changed
-- commits updated files when a new notice is detected
+- commits updated text and generated HTML files when a new notice is detected
 - publishes the latest HTML output and archive pages via GitHub Pages
 
 ## GitHub Pages

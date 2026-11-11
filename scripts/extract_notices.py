@@ -116,37 +116,46 @@ def render_notice_card(text: str) -> str:
     if not paragraphs:
         paragraphs = ["No notices available."]
 
-    cards = []
+    paragraphs_html = []
     for paragraph in paragraphs:
         safe_paragraph = html.escape(paragraph).replace("\n", "<br>")
-        cards.append(f"<article class=\"notice\"><p>{safe_paragraph}</p></article>")
-    return "\n".join(cards)
+        paragraphs_html.append(f"<p>{safe_paragraph}</p>")
+    return '<article class="notice">' + "\n<br>\n".join(paragraphs_html) + "</article>"
 
 
-def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "./archive.html") -> str:
+def build_page(title: str, body_html: str, updated_at: str, *, is_index: bool = False) -> str:
+    stylesheet = "style-index.css" if is_index else "style-archive-notices.css"
+    heading = "Avisos | Covilhã Mobilidade" if is_index else "Aviso | Covilhã Mobilidade"
+    navigation = (
+        '<a class="archive-link" href="./archive.html">📚 Arquivo</a>'
+        if is_index else
+        '<div class="nav-links"><a class="nav-link" href="./index.html">⬅️ Últimas</a> '
+        '<a class="nav-link" href="./archive.html">📚 Arquivo</a></div>'
+    )
+    date_label = "Última atualização" if is_index else "Data"
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
-    <link rel="stylesheet" href="./css/style-archive-notices.css" />
+    <link rel="stylesheet" href="./css/{stylesheet}" />
     <link rel="icon" href="./images/favicon_io/favicon.ico" />
     <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
 <body>
     <main class="container">
         <div class="header">
-            <h1>{html.escape(title)}</h1>
-            <a class="archive-link" href="{archive_url}">Arquivo</a>
+            <h1>🚍 {html.escape(heading)}</h1>
+            {navigation}
         </div>
-        <div class="meta">Última atualização: {html.escape(updated_at)}</div>
+        <div class="meta">{date_label}: {html.escape(updated_at)}</div>
         <section class="docs">
             {body_html}
         </section>
     </main>
     <footer>
-        Dados extraídos de <a href="https://covilhamobilidade.pt/">https://covilhamobilidade.pt/</a>
+        <section class="footer-content">Dados extraídos de <a href="https://covilhamobilidade.pt/">Covilhã Mobilidade</a>. Um projeto de <a href="https://claudioduarte.pt/">Cláudio Duarte</a>.</section>
     </footer>
 </body>
 </html>
@@ -154,7 +163,7 @@ def build_page(title: str, body_html: str, updated_at: str, archive_url: str = "
 
 
 def build_archive_page() -> str:
-    archive_files = sorted(DOCS_DIR.glob("notices-*.html"))
+    archive_files = sorted(DOCS_DIR.glob("notices-*.html"), reverse=True)
     archive_items = []
 
     for archive_file in archive_files:
@@ -176,9 +185,11 @@ def build_archive_page() -> str:
 </head>
 <body>
     <main class="container">
-        <h1>Arquivo</h1>
+        <div class="header">
+            <h1>📚 Arquivo de Avisos</h1>
+            <a class="home-link" href="./index.html">⬅️ Últimas</a>
+        </div>
         <div class="archive-list">
-            <a class="archive-item" href="./index.html">⬅️ Últimas</a>
             {''.join(archive_items)}
         </div>
     </main>
@@ -195,14 +206,13 @@ def build_archive_page() -> str:
 def generate_pages(text: str, notice_date: str):
     body_html = render_notice_card(text)
 
-    index_html = build_page("Avisos | Covilhã Mobilidade", body_html, notice_date)
+    index_html = build_page("Avisos | Covilhã Mobilidade", body_html, notice_date, is_index=True)
     (DOCS_DIR / "index.html").write_text(index_html, encoding="utf-8")
 
     dated_page = build_page(
         f"Aviso | Covilhã Mobilidade — {notice_date}",
         body_html,
         notice_date,
-        archive_url="./archive.html",
     )
     (DOCS_DIR / f"notices-{notice_date}.html").write_text(dated_page, encoding="utf-8")
 
@@ -252,8 +262,3 @@ if has_changed:
     print(f"Generated GitHub Pages content in {DOCS_DIR}")
 else:
     print("No changes detected in PDF content")
-    if txt_latest.exists():
-        latest_text = txt_latest.read_text(encoding="utf-8")
-        if latest_text:
-            generate_pages(latest_text, today)
-            print(f"Refreshed GitHub Pages content in {DOCS_DIR}")
