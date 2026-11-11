@@ -114,49 +114,84 @@ def normalize_pdf_text(raw_text: str) -> str:
 def render_notice_card(text: str) -> str:
     paragraphs = split_paragraphs(text)
     if not paragraphs:
-        paragraphs = ["No notices available."]
+        paragraphs = ["Não há avisos disponíveis."]
 
     paragraphs_html = []
     for paragraph in paragraphs:
         safe_paragraph = html.escape(paragraph).replace("\n", "<br>")
         paragraphs_html.append(f"<p>{safe_paragraph}</p>")
-    return '<article class="notice">' + "\n<br>\n".join(paragraphs_html) + "</article>"
+    return '<article class="notice">' + "\n".join(paragraphs_html) + "</article>"
+
+
+def site_header() -> str:
+    return """<header class="site-header">
+    <div class="site-header-inner">
+        <a class="brand" href="./index.html" aria-label="Avisos Covilhã Mobilidade, página inicial">
+            <span class="brand-mark" aria-hidden="true">C<span>.</span></span>
+            <span class="brand-text">Covilhã <strong>Mobilidade</strong><small>AVISOS DE SERVIÇO</small></span>
+        </a>
+        <nav class="site-nav" aria-label="Navegação principal">
+            <a href="./index.html">Último aviso</a>
+            <a href="./archive.html">Arquivo <span aria-hidden="true">↗</span></a>
+        </nav>
+    </div>
+</header>"""
+
+
+def site_footer() -> str:
+    return """<footer class="site-footer">
+    <div class="footer-inner">
+        <p>Informação para quem anda pela cidade.</p>
+        <p>Dados extraídos de <a href="https://covilhamobilidade.pt/">Covilhã Mobilidade</a> · Um projeto de <a href="https://claudioduarte.pt/">Cláudio Duarte</a></p>
+    </div>
+</footer>"""
 
 
 def build_page(title: str, body_html: str, updated_at: str, *, is_index: bool = False) -> str:
-    stylesheet = "style-index.css" if is_index else "style-archive-notices.css"
-    heading = "Avisos | Covilhã Mobilidade" if is_index else "Aviso | Covilhã Mobilidade"
-    navigation = (
-        '<a class="archive-link" href="./archive.html">📚 Arquivo</a>'
-        if is_index else
-        '<div class="nav-links"><a class="nav-link" href="./index.html">⬅️ Últimas</a> '
-        '<a class="nav-link" href="./archive.html">📚 Arquivo</a></div>'
+    heading = "O seu percurso,<br>mais informado<span>.</span>" if is_index else "Um aviso<br>do arquivo<span>.</span>"
+    eyebrow = "INFORMAÇÃO DE SERVIÇO" if is_index else "ARQUIVO DE AVISOS"
+    description = (
+        "Consulte aqui o último aviso de serviço da Covilhã Mobilidade."
+        if is_index else "Consulte os detalhes deste aviso guardado no arquivo."
     )
-    date_label = "Última atualização" if is_index else "Data"
+    notice_label = "Último aviso" if is_index else "Aviso arquivado"
+    date_label = "Atualizado em" if is_index else "Data do aviso"
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
-    <link rel="stylesheet" href="./css/{stylesheet}" />
+    <meta name="description" content="Avisos de serviço da Covilhã Mobilidade." />
+    <link rel="stylesheet" href="./css/site.css" />
     <link rel="icon" href="./images/favicon_io/favicon.ico" />
     <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
 <body>
-    <main class="container">
-        <div class="header">
-            <h1>🚍 {html.escape(heading)}</h1>
-            {navigation}
-        </div>
-        <div class="meta">{date_label}: {html.escape(updated_at)}</div>
-        <section class="docs">
+    {site_header()}
+    <main id="main-content" class="page-shell">
+        <section class="hero" aria-labelledby="page-title">
+            <div class="hero-copy">
+                <p class="eyebrow"><span aria-hidden="true"></span>{eyebrow}</p>
+                <h1 id="page-title">{heading}</h1>
+                <p class="hero-description">{description}</p>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <span class="route-label">COVILHÃ<br>MOBILIDADE</span>
+                <span class="route-line"><i></i><i></i><i></i></span>
+                <span class="route-number">CM <strong>01</strong></span>
+            </div>
+        </section>
+        <section class="notice-section" aria-labelledby="notice-heading">
+            <div class="section-heading">
+                <div><p class="section-kicker">INFORMAÇÃO DE SERVIÇO</p><h2 id="notice-heading">{notice_label}</h2></div>
+                <p class="date-label">{date_label} <time datetime="{html.escape(updated_at, quote=True)}">{html.escape(updated_at)}</time></p>
+            </div>
             {body_html}
+            <div class="notice-actions"><a class="text-link" href="./archive.html">Explorar o arquivo <span aria-hidden="true">↗</span></a></div>
         </section>
     </main>
-    <footer>
-        <section class="footer-content">Dados extraídos de <a href="https://covilhamobilidade.pt/">Covilhã Mobilidade</a>. Um projeto de <a href="https://claudioduarte.pt/">Cláudio Duarte</a>.</section>
-    </footer>
+    {site_footer()}
 </body>
 </html>
 """
@@ -168,36 +203,45 @@ def build_archive_page() -> str:
 
     for archive_file in archive_files:
         name = archive_file.name
-        if name == "index.html":
-            continue
         label = name.replace("notices-", "").replace(".html", "")
-        archive_items.append(f'<a class="archive-item" href="./{name}">{label}</a>')
+        archive_items.append(
+            f'<a class="archive-item" href="./{html.escape(name, quote=True)}">'
+            f'<span><small>AVISO DE SERVIÇO</small><time datetime="{html.escape(label, quote=True)}">'
+            f'{html.escape(label)}</time></span><span class="archive-arrow" aria-hidden="true">↗</span></a>'
+        )
+
+    items_html = "\n            ".join(archive_items)
 
     return f"""<!DOCTYPE html>
-<html lang="en">
+<html lang="pt-PT">
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arquivo de Avisos | Covilhã Mobilidade</title>
-    <link rel="stylesheet" href="./css/style-archive.css" />
+    <meta name="description" content="Arquivo de avisos de serviço da Covilhã Mobilidade." />
+    <link rel="stylesheet" href="./css/site.css" />
     <link rel="icon" href="./images/favicon_io/favicon.ico" />
     <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
 <body>
-    <main class="container">
-        <div class="header">
-            <h1>📚 Arquivo de Avisos</h1>
-            <a class="home-link" href="./index.html">⬅️ Últimas</a>
-        </div>
-        <div class="archive-list">
-            {''.join(archive_items)}
-        </div>
-    </main>
-    <footer>
-        <section class="footer-content">
-            Dados extraídos de <a href="https://covilhamobilidade.pt/">Covilhã Mobilidade</a>. Um projeto de <a href="https://claudioduarte.pt/">Cláudio Duarte</a>.
+    {site_header()}
+    <main id="main-content" class="page-shell">
+        <section class="archive-intro">
+            <p class="eyebrow"><span aria-hidden="true"></span>HISTÓRICO DE SERVIÇO</p>
+            <h1>Arquivo de avisos<span>.</span></h1>
+            <p class="hero-description">Consulte os avisos anteriores da Covilhã Mobilidade.</p>
         </section>
-    </footer>
+        <section class="archive-section" aria-labelledby="archive-heading">
+            <div class="section-heading">
+                <div><p class="section-kicker">CONSULTAR</p><h2 id="archive-heading">Avisos anteriores</h2></div>
+                <p class="date-label">Mais recentes primeiro</p>
+            </div>
+            <div class="archive-list">
+                {items_html}
+            </div>
+        </section>
+    </main>
+    {site_footer()}
 </body>
 </html>
 """

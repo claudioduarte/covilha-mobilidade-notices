@@ -32,6 +32,7 @@ class ExtractionTest(unittest.TestCase):
             (root / "output" / "latest.txt").write_text("Old notice", encoding="utf-8")
             (root / "docs").mkdir()
             (root / "docs" / "index.html").write_text("Old page", encoding="utf-8")
+            (root / "docs" / "notices-2000-01-01.html").write_text("Old archive", encoding="utf-8")
 
             class Response:
                 content = pdf_bytes
@@ -60,6 +61,12 @@ class ExtractionTest(unittest.TestCase):
             self.assertIn(f'./notices-{date}.html', archive)
             self.assertIn('href="./archive.html"', index)
             self.assertIn('href="./index.html"', dated)
+            for page in (index, dated, archive):
+                self.assertIn('<html lang="pt-PT">', page)
+                self.assertIn('href="./css/site.css"', page)
+                self.assertIn('aria-label="Navegação principal"', page)
+            self.assertLess(archive.index(f'./notices-{date}.html'), archive.index('./notices-2000-01-01.html'))
+            self.assertIn(f'<time datetime="{date}">{date}</time>', dated)
 
             files = {path: path.read_bytes() for path in root.rglob("*") if path.is_file()}
             run_extractor()
