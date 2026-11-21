@@ -163,7 +163,7 @@ def build_page(title: str, body_html: str, updated_at: str, *, is_index: bool = 
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{html.escape(title)}</title>
     <meta name="description" content="Avisos de serviço da Covilhã Mobilidade." />
-    <link rel="stylesheet" href="./css/site.css" />
+    <link rel="stylesheet" href="./css/style.css" />
     <link rel="icon" href="./images/favicon_io/favicon.ico" />
     <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>
@@ -219,7 +219,7 @@ def build_archive_page() -> str:
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Arquivo de Avisos | Covilhã Mobilidade</title>
     <meta name="description" content="Arquivo de avisos de serviço da Covilhã Mobilidade." />
-    <link rel="stylesheet" href="./css/site.css" />
+    <link rel="stylesheet" href="./css/style.css" />
     <link rel="icon" href="./images/favicon_io/favicon.ico" />
     <link rel="manifest" href="./images/favicon_io/site.webmanifest" />
 </head>

@@ -63,7 +63,7 @@ class ExtractionTest(unittest.TestCase):
             self.assertIn('href="./index.html"', dated)
             for page in (index, dated, archive):
                 self.assertIn('<html lang="pt-PT">', page)
-                self.assertIn('href="./css/site.css"', page)
+                self.assertIn('href="./css/style.css"', page)
                 self.assertIn('aria-label="Navegação principal"', page)
             self.assertLess(archive.index(f'./notices-{date}.html'), archive.index('./notices-2000-01-01.html'))
             self.assertIn(f'<time datetime="{date}">{date}</time>', dated)
