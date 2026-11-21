@@ -155,7 +155,7 @@ def build_page(title: str, body_html: str, updated_at: str, *, is_index: bool = 
         if is_index else "Consulte os detalhes deste aviso guardado no arquivo."
     )
     notice_label = "Último aviso" if is_index else "Aviso arquivado"
-    date_label = "Atualizado em" if is_index else "Data do aviso"
+    date_label = "Atualizado a" if is_index else "Data do aviso"
     return f"""<!DOCTYPE html>
 <html lang="pt-PT">
 <head>
